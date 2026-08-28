@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marine Monitor · Dashboard Marítimo Costa Valenciana</title>
+  <link rel="icon" type="image/png" href="mmclub-logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+    /* ============================================
+       PADDLE SURF MONITOR — Multi-Location Dashboard
+       ============================================ */
+
+    :root,
+    [data-theme='light'] {
+      --color-bg: #f4f6f8;
+      --color-surface: #ffffff;
+      --color-surface-2: #f8fafb;
+      --color-surface-offset: #eef2f5;
+      --color-surface-dynamic: #e3e9ed;
+      --color-divider: #dce4e9;
+      --color-border: #cdd8df;
+      --color-text: #1a2730;
+      --color-text-muted: #5a7180;
+      --color-text-faint: #9aafbb;
+      --color-text-inverse: #f8fafb;
+      --color-primary: #006d77;
+      --color-primary-hover: #005a63;
+      --color-primary-active: #004850;
+      --color-primary-highlight: #cde5e7;
+      --color-go: #2d8a3e;
+      --color-go-bg: #e3f5e8;
+      --color-caution: #c47700;
+      --color-caution-bg: #fdf3e0;
+      --color-no-go: #b83340;
+      --color-no-go-bg: #fce8ea;
+      --color-wind: #006d77;
+      --color-wave: #3b7dd8;
+      --color-rain: #6c5ce7;
+      --color-vis: #e8833a;
+      --radius-sm: 0.375rem;
+      --radius-md: 0.625rem;
+      --radius-lg: 0.875rem;
+      --radius-full: 9999px;
+      --transition: 200ms cubic-bezier(0.16, 1, 0.3, 1);
+      --shadow-sm: 0 1px 3px rgba(20, 40, 60, 0.06);
+      --shadow-md: 0 4px 16px rgba(20, 40, 60, 0.08);
+      --shadow-lg: 0 12px 40px rgba(20, 40, 60, 0.12);
+      --content-wide: 1200px;
+      --font-body: 'Manrope', system-ui, -apple-system, sans-serif;
+    }
+
+    [data-theme='dark'] {
+      --color-bg: #0d1820;
+      --color-surface: #14222b;
+      --color-surface-2: #182833;
+      --color-surface-offset: #1a2a35;
+      --color-surface-dynamic: #243642;
+      --color-divider: #1f3040;
+      --color-border: #2a3f50;
+      --color-text: #d8e4ea;
+      --color-text-muted: #7a92a0;
+      --color-text-faint: #4a6270;
+      --color-text-inverse: #0d1820;
+      --color-primary: #3da3b0;
+      --color-primary-hover: #2d8a96;
+      --color-primary-active: #1d717c;
+      --color-primary-highlight: #1a2e35;
+      --color-go: #5cb767;
+      --color-go-bg: rgba(45, 138, 62, 0.15);
+      --color-caution: #e8a93a;
+      --color-caution-bg: rgba(196, 119, 0, 0.15);
+      --color-no-go: #e8596a;
+      --color-no-go-bg: rgba(184, 51, 64, 0.15);
+      --color-wind: #3da3b0;
+      --color-wave: #5b9fe8;
+      --color-rain: #9b8cf0;
+      --color-vis: #f0a050;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+
+    body {
+      min-height: 100dvh;
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.5;
+      color: var(--color-text);
+      background-color: var(--color-bg);
+    }
+
+    a { color: var(--color-primary); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    button { cursor: pointer; font: inherit; border: none; background: none; color: inherit; }
+
+    .app {
+      max-width: var(--content-wide);
+      margin: 0 auto;
+      padding: 1.5rem 1rem 3rem;
+    }
+
+    @media (min-width: 768px) {
+      .app { padding: 2rem 2rem 4rem; }
+    }
+
+    /* === Header === */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--color-primary);
+    }
+
+    .logo-text {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--color-text);
+    }
+
+    .location-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--color-text-muted);
+      background: var(--color-surface-offset);
+      padding: 0.3125rem 0.75rem;
+      border-radius: var(--radius-full);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .last-update {
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .theme-toggle, .windy-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      background: var(--color-surface-offset);
+      color: var(--color-text-muted);
+      transition: all var(--transition);
+    }
+
+    .theme-toggle:hover, .windy-link:hover {
+      background: var(--color-surface-dynamic);
+      color: var(--color-text);
+    }
+
+    [data-theme='dark'] .icon-sun { display: none; }
+    [data-theme='light'] .icon-moon,
+    :root:not([data-theme]) .icon-moon { display: none; }
+
+    /* === Province Selector === */
+    .province-selector {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+
+    .province-label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .select-wrapper {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    select {
+      appearance: none;
+      background: var(--color-surface);
+      color: var(--color-text);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 0.5rem 2rem 0.5rem 0.75rem;
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    select:hover {
+      border-color: var(--color-primary);
+      background: var(--color-surface-offset);
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px var(--color-primary-highlight);
+    }
+
+    .select-wrapper::after {
+      content: '▼';
+      position: absolute;
+      right: 0.5rem;
+      pointer-events: none;
+      color: var(--color-text-muted);
+      font-size: 0.6rem;
+    }
+
+    /* === Status Banner === */
+    .status-banner {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.25rem 1.5rem;
+      border-radius: var(--radius-lg);
+      margin-bottom: 1.5rem;
+      background: var(--color-surface);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--color-divider);
+      transition: all var(--transition);
+    }
+
+    .status-banner.status-go { background: var(--color-go-bg); border-color: var(--color-go); }
+    .status-banner.status-caution { background: var(--color-caution-bg); border-color: var(--color-caution); }
+    .status-banner.status-no-go { background: var(--color-no-go-bg); border-color: var(--color-no-go); }
+
+    .status-icon-wrap { flex-shrink: 0; }
+
+    .status-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      background: var(--color-surface);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .status-go .status-icon { color: var(--color-go); }
+    .status-caution .status-icon { color: var(--color-caution); }
+    .status-no-go .status-icon { color: var(--color-no-go); }
+
+    .status-content { flex: 1; }
+
+    .status-title { font-size: 1.125rem; font-weight: 700; margin-bottom: 0.125rem; }
+    .status-detail { font-size: 0.8125rem; color: var(--color-text-muted); }
+
+    /* === Conditions Grid === */
+    .conditions-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (min-width: 560px) { .conditions-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 900px) { .conditions-grid { grid-template-columns: repeat(4, 1fr); } }
+
+    .card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-divider);
+      border-radius: var(--radius-lg);
+      padding: 1.125rem;
+      box-shadow: var(--shadow-sm);
+      transition: all var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--color-primary);
+      opacity: 0.6;
+    }
+
+    .card.alert::before { background: var(--color-no-go); opacity: 1; }
+
+    .card-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.625rem; }
+    .card-icon { color: var(--color-text-muted); flex-shrink: 0; }
+    .card-label { font-size: 0.75rem; font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .card-body { display: flex; align-items: baseline; gap: 0.25rem; margin-bottom: 0.5rem; }
+    .card-value { font-size: 1.75rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; color: var(--color-text); }
+    .card-unit { font-size: 0.8125rem; font-weight: 500; color: var(--color-text-muted); }
+    .card-meta { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--color-text-muted); }
+    .meta-item { font-variant-numeric: tabular-nums; }
+    .wind-arrow { font-size: 1rem; color: var(--color-primary); }
+
+    .rain-bar { flex: 1; height: 4px; background: var(--color-surface-dynamic); border-radius: var(--radius-full); overflow: hidden; }
+    .rain-bar-fill { height: 100%; width: 0%; background: var(--color-rain); border-radius: var(--radius-full); transition: width 0.5s ease; }
+
+    /* === Activity Window === */
+    .activity-window {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      padding: 0.75rem 1.125rem;
+      background: var(--color-surface);
+      border: 1px solid var(--color-divider);
+      border-radius: var(--radius-md);
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .window-label { display: flex; align-items: center; gap: 0.375rem; font-size: 0.8125rem; font-weight: 600; color: var(--color-text-muted); }
+    .window-time { font-size: 0.875rem; font-weight: 700; color: var(--color-primary); font-variant-numeric: tabular-nums; }
+    .window-status { margin-left: auto; font-size: 0.75rem; font-weight: 600; padding: 0.1875rem 0.625rem; border-radius: var(--radius-full); background: var(--color-surface-offset); color: var(--color-text-muted); }
+    .window-status.active { background: var(--color-go-bg); color: var(--color-go); }
+
+    /* === Chart === */
+    .chart-section { background: var(--color-surface); border: 1px solid var(--color-divider); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-sm); }
+    .chart-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; }
+    .chart-title { font-size: 1rem; font-weight: 700; }
+    .chart-legend { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+    .legend-item { display: flex; align-items: center; gap: 0.3125rem; font-size: 0.75rem; color: var(--color-text-muted); font-weight: 500; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .dot-wind { background: var(--color-wind); }
+    .dot-wave { background: var(--color-wave); }
+    .dot-rain { background: var(--color-rain); }
+    .dot-vis { background: var(--color-vis); }
+    .chart-container { position: relative; height: 320px; }
+
+    /* === Table === */
+    .table-section { background: var(--color-surface); border: 1px solid var(--color-divider); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-sm); }
+    .table-title { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; }
+    .table-wrap { overflow-x: auto; }
+    .hourly-table { width: 100%; font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
+    .hourly-table th { text-align: left; font-weight: 600; font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-text-muted); padding: 0.5rem 0.625rem; border-bottom: 2px solid var(--color-divider); white-space: nowrap; }
+    .hourly-table td { padding: 0.625rem; border-bottom: 1px solid var(--color-divider); color: var(--color-text); }
+    .hourly-table tbody tr:last-child td { border-bottom: none; }
+    .hourly-table .badge { display: inline-block; font-size: 0.6875rem; font-weight: 600; padding: 0.125rem 0.5rem; border-radius: var(--radius-full); white-space: nowrap; }
+    .badge-go { background: var(--color-go-bg); color: var(--color-go); }
+    .badge-caution { background: var(--color-caution-bg); color: var(--color-caution); }
+    .badge-no-go { background: var(--color-no-go-bg); color: var(--color-no-go); }
+    .hourly-table .row-highlight td { background: var(--color-surface-2); }
+
+    /* === Footer === */
+    .footer { text-align: center; padding-top: 1.5rem; font-size: 0.75rem; color: var(--color-text-muted); border-top: 1px solid var(--color-divider); }
+    .footer p { margin-bottom: 0.25rem; }
+    .footer-loc { color: var(--color-text-faint); }
+
+    /* === Loading === */
+    .loading .card-value { color: var(--color-text-faint); }
+
+    /* === Responsive === */
+    @media (max-width: 480px) {
+      .card-value { font-size: 1.5rem; }
+      .chart-container { height: 260px; }
+      .header { flex-direction: column; align-items: flex-start; }
+      .status-banner { flex-direction: column; align-items: flex-start; }
+      .status-content { width: 100%; }
+      .province-selector { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo">
+          <img src="mmclub-logo.png" alt="Marine Monitor" style="width: 48px; height: 48px; object-fit: contain; margin-right: 0.5rem;" />
+          <span class="logo-text">Marine Monitor</span>
+        </div>
+        <span id="locationBadge" class="location-badge">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span id="locationName">Selecciona una playa</span>
+        </span>
+      </div>
+      <div class="header-right">
+        <span id="lastUpdate" class="last-update"></span>
+        <a href="#" id="windyLink" class="windy-link" title="Ver en Windy.com" target="_blank">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/>
+          </svg>
+        </a>
+        <button class="theme-toggle" data-theme-toggle aria-label="Cambiar tema">
+          <svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Activity Type & Province & Beach Selector -->
+    <div class="province-selector">
+      <span class="province-label">Actividad:</span>
+      <div class="select-wrapper">
+        <select id="activitySelect">
+          <option value="paddlesurf">🏄 Paddle Surf</option>
+          <option value="windsurf">🪁 Windsurf</option>
+          <option value="kitesurf">🪁🪂 Kite Surf</option>
+          <option value="buceo">🤿 Buceo</option>
+          <option value="hydrofoil">🪂 Hydrofoil</option>
+        </select>
+      </div>
+
+      <span class="province-label" style="margin-left: 1rem;">Provincia:</span>
+      <div class="select-wrapper">
+        <select id="provinceSelect">
+          <option value="">-- Selecciona provincia --</option>
+          <option value="castellon">Castellón</option>
+          <option value="valencia">Valencia</option>
+          <option value="alicante">Alicante</option>
+        </select>
+      </div>
+
+      <span class="province-label" style="margin-left: 1rem;">Playa:</span>
+      <div class="select-wrapper">
+        <select id="beachSelect" disabled>
+          <option value="">-- Selecciona playa --</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Activity Info Banner -->
+    <div id="activityInfo" style="background: var(--color-surface-offset); border: 1px solid var(--color-divider); border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-bottom: 1.5rem; font-size: 0.8125rem; color: var(--color-text-muted);">
+      <strong id="activityTitle" style="color: var(--color-primary);">Paddle Surf</strong> - Condiciones ideales: Oleaje 0.5-2m, Viento &lt;15 km/h, Visibilidad &gt;5km
+    </div>
+
+    <!-- Status Banner -->
+    <section id="statusBanner" class="status-banner">
+      <div class="status-icon-wrap">
+        <div id="statusIcon" class="status-icon"></div>
+      </div>
+      <div class="status-content">
+        <h2 id="statusTitle" class="status-title">Cargando condiciones…</h2>
+        <p id="statusDetail" class="status-detail">Selecciona una playa para ver los datos meteorológicos</p>
+      </div>
+    </section>
+
+    <!-- Current Conditions Cards -->
+    <section class="conditions-grid">
+      <div class="card" id="cardWind">
+        <div class="card-header">
+          <svg class="card-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg>
+          <span class="card-label">Viento</span>
+        </div>
+        <div class="card-body">
+          <span id="windSpeed" class="card-value">—</span>
+          <span class="card-unit">km/h</span>
+        </div>
+        <div class="card-meta">
+          <span id="windDir" class="meta-item">Dir: —</span>
+          <span id="windDirArrow" class="wind-arrow">—</span>
+        </div>
+      </div>
+
+      <div class="card" id="cardWave">
+        <div class="card-header">
+          <svg class="card-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/><path d="M2 17c2-3 4-3 6 0s4 3 6 0 4-3 6 0"/></svg>
+          <span class="card-label">Altura de oleaje</span>
+        </div>
+        <div class="card-body">
+          <span id="waveHeight" class="card-value">—</span>
+          <span class="card-unit">m</span>
+        </div>
+        <div class="card-meta">
+          <span id="wavePeriod" class="meta-item">Periodo: —</span>
+        </div>
+      </div>
+
+      <div class="card" id="cardRain">
+        <div class="card-header">
+          <svg class="card-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/><path d="M8 19v2M8 13v2M16 19v2M16 13v2M12 21v2M12 15v2"/></svg>
+          <span class="card-label">Prob. precipitación</span>
+        </div>
+        <div class="card-body">
+          <span id="rainProb" class="card-value">—</span>
+          <span class="card-unit">%</span>
+        </div>
+        <div class="card-meta">
+          <div class="rain-bar"><div id="rainBarFill" class="rain-bar-fill"></div></div>
+        </div>
+      </div>
+
+      <div class="card" id="cardVis">
+        <div class="card-header">
+          <svg class="card-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span class="card-label">Visibilidad</span>
+        </div>
+        <div class="card-body">
+          <span id="visibility" class="card-value">—</span>
+          <span class="card-unit">km</span>
+        </div>
+        <div class="card-meta">
+          <span id="visStatus" class="meta-item">—</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Activity Window Info -->
+    <section class="activity-window">
+      <div class="window-label">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        <span>Franja de actividad preferida</span>
+      </div>
+      <span class="window-time">10:00 – 14:00 h</span>
+      <span id="windowStatus" class="window-status">—</span>
+    </section>
+
+    <!-- Forecast Chart -->
+    <section class="chart-section">
+      <div class="chart-header">
+        <h3 class="chart-title">Pronóstico 48 h</h3>
+        <div class="chart-legend">
+          <span class="legend-item"><span class="legend-dot dot-wind"></span>Viento</span>
+          <span class="legend-item"><span class="legend-dot dot-wave"></span>Oleaje</span>
+          <span class="legend-item"><span class="legend-dot dot-rain"></span>Precip.</span>
+          <span class="legend-item"><span class="legend-dot dot-vis"></span>Visib.</span>
+        </div>
+      </div>
+      <div class="chart-container">
+        <canvas id="forecastChart"></canvas>
+      </div>
+    </section>
+
+    <!-- Hourly Table -->
+    <section class="table-section">
+      <h3 class="table-title">Detalle por horas · Franja 10:00–14:00</h3>
+      <div class="table-wrap">
+        <table class="hourly-table">
+          <thead>
+            <tr>
+              <th>Hora</th>
+              <th>Viento</th>
+              <th>Direc.</th>
+              <th>Oleaje</th>
+              <th>Periodo</th>
+              <th>Precip.</th>
+              <th>Visib.</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="hourlyTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>Datos: <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> · Pronósticos interactivos: <a href="https://windy.com" target="_blank" rel="noopener">Windy.com</a> · Actualización automática cada 10 min</p>
+      <p class="footer-loc" id="footerLoc">Selecciona una playa · Zona horaria: Europe/Madrid</p>
+    </footer>
+
+  </div>
+
+  <script>
+    /* ============================================
+       PADDLE SURF MONITOR — Multi-Location App
+       Data: Open-Meteo Forecast + Marine APIs
+       ============================================ */
+
+    const LOCATIONS = {
+      castellon: [
+        { id: 'alcala', name: 'Alcalá de Xivert', lat: 40.4214, lon: 0.3356, region: 'Alcalá de Xivert' },
+        { id: 'peiscola', name: 'Peñíscola', lat: 40.3605, lon: 0.3922, region: 'Peñíscola' },
+        { id: 'benicarlobenicassim', name: 'Benicàssim', lat: 40.3753, lon: 0.0779, region: 'Benicàssim' },
+      ],
+      valencia: [
+        { id: 'pobla', name: 'La Pobla de Farnals', lat: 39.5643, lon: -0.2834, region: 'La Pobla de Farnals' },
+        { id: 'cullera', name: 'Cullera', lat: 39.1646, lon: -0.2406, region: 'Cullera' },
+        { id: 'gandia', name: 'Gandia', lat: 39.0060, lon: -0.1728, region: 'Gandia' },
+        { id: 'oliva', name: 'Oliva', lat: 38.9356, lon: -0.0988, region: 'Oliva' },
+      ],
+      alicante: [
+        { id: 'denia', name: 'Dénia', lat: 38.8408, lon: 0.1057, region: 'Dénia' },
+        { id: 'calpe', name: 'Calpe', lat: 38.6418, lon: 0.0542, region: 'Calpe' },
+        { id: 'capblanc', name: 'Cap Blanc', lat: 38.6743, lon: 0.1136, region: 'Moraira' },
+        { id: 'teulada', name: 'Teulada', lat: 38.6881, lon: 0.1345, region: 'Moraira' },
+        { id: 'portet', name: 'El Portet', lat: 38.6872, lon: 0.1463, region: 'Moraira' },
+        { id: 'moraig', name: 'Cala del Moraig', lat: 38.7094, lon: 0.1669, region: 'Benitachell' },
+        { id: 'granadella', name: 'Cala Granadella', lat: 38.7297, lon: 0.1970, region: 'Xàbia' },
+        { id: 'capnegre', name: 'Cap Negre', lat: 38.7453, lon: 0.2319, region: 'Xàbia' },
+        { id: 'lacaleta', name: 'La Caleta', lat: 38.7617, lon: 0.2066, region: 'Xàbia' },
+        { id: 'portitxol', name: 'El Portitxol', lat: 38.7545, lon: 0.2241, region: 'Xàbia' },
+        { id: 'xabia', name: 'Xàbia (Arenal)', lat: 38.7732, lon: 0.1908, region: 'Xàbia' },
+      ]
+    };
+
+    const ACTIVITIES = {
+      paddlesurf: {
+        name: '🏄 Paddle Surf',
+        windThreshold: 15,
+        visibilityThreshold: 5,
+        waveMin: 0.5,
+        waveMax: 2.0,
+        info: 'Condiciones ideales: Oleaje 0.5-2m, Viento <15 km/h, Visibilidad >5km'
+      },
+      windsurf: {
+        name: '🪁 Windsurf',
+        windThreshold: 30,
+        visibilityThreshold: 8,
+        windMin: 12,
+        waveMin: 1.0,
+        waveMax: 3.0,
+        info: 'Condiciones ideales: Viento 12-25 km/h, Oleaje 1-3m, Visibilidad >8km'
+      },
+      kitesurf: {
+        name: '🪁🪂 Kite Surf',
+        windThreshold: 35,
+        visibilityThreshold: 8,
+        windMin: 14,
+        waveMin: 0.5,
+        waveMax: 2.5,
+        info: 'Condiciones ideales: Viento 14-30+ km/h (fuerte), Oleaje 0.5-2.5m, Visibilidad >8km'
+      },
+      buceo: {
+        name: '🤿 Buceo',
+        windThreshold: 10,
+        visibilityThreshold: 10,
+        waveMax: 1.0,
+        info: 'Condiciones ideales: Visibilidad >10km, Viento <10 km/h, Oleaje <1m'
+      },
+      hydrofoil: {
+        name: '🪂 Hydrofoil',
+        windThreshold: 40,
+        visibilityThreshold: 8,
+        windMin: 12,
+        waveMin: 1.0,
+        info: 'Condiciones ideales: Viento >12 km/h, Oleaje >1m, Visibilidad >8km'
+      }
+    };
+
+    const CONFIG = {
+      activityStart: 10,
+      activityEnd: 14,
+      refreshInterval: 600000,
+      timezone: 'Europe/Madrid',
+    };
+
+    let currentLocation = null;
+    let currentProvince = null;
+    let currentActivity = 'paddlesurf';
+    let forecastChart = null;
+    let refreshTimer = null;
+    let currentData = null;
+
+    // === Theme Toggle ===
+    (function () {
+      const t = document.querySelector('[data-theme-toggle]');
+      const r = document.documentElement;
+      let d = localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light');
+      r.setAttribute('data-theme', d);
+      t.addEventListener('click', () => {
+        d = d === 'dark' ? 'light' : 'dark';
+        r.setAttribute('data-theme', d);
+        localStorage.setItem('theme', d);
+        if (currentData) renderChart(currentData);
+      });
+    })();
+
+    // === Activity Selection ===
+    function initActivitySelect() {
+      const activitySelect = document.getElementById('activitySelect');
+      activitySelect.addEventListener('change', (e) => {
+        currentActivity = e.target.value;
+        const activity = ACTIVITIES[currentActivity];
+        document.getElementById('activityInfo').innerHTML = 
+          `<strong style="color: var(--color-primary);">${activity.name}</strong> - ${activity.info}`;
+        if (currentData) loadData();
+      });
+    }
+
+    // === Province & Beach Selection ===
+    function initProvinceSelect() {
+      const provinceSelect = document.getElementById('provinceSelect');
+      const beachSelect = document.getElementById('beachSelect');
+
+      provinceSelect.addEventListener('change', (e) => {
+        currentProvince = e.target.value;
+        beachSelect.innerHTML = '<option value="">-- Selecciona playa --</option>';
+        
+        if (currentProvince && LOCATIONS[currentProvince]) {
+          LOCATIONS[currentProvince].forEach(beach => {
+            const option = document.createElement('option');
+            option.value = beach.id;
+            option.textContent = beach.name;
+            beachSelect.appendChild(option);
+          });
+          beachSelect.disabled = false;
+        } else {
+          beachSelect.disabled = true;
+        }
+      });
+
+      beachSelect.addEventListener('change', (e) => {
+        if (e.target.value && currentProvince) {
+          const beach = LOCATIONS[currentProvince].find(b => b.id === e.target.value);
+          if (beach) selectLocation(beach);
+        }
+      });
+    }
+
+    function selectLocation(loc) {
+      currentLocation = loc;
+      document.getElementById('locationName').textContent = loc.name + ' · ' + loc.region;
+      document.getElementById('footerLoc').textContent =
+        `${loc.name} (${loc.region}) · ${Math.abs(loc.lat).toFixed(4)}°${loc.lat >= 0 ? 'N' : 'S'}, ${Math.abs(loc.lon).toFixed(4)}°${loc.lon >= 0 ? 'E' : 'W'}`;
+      
+      // Actualizar Windy link
+      document.getElementById('windyLink').href = `https://windy.com/?${loc.lat},${loc.lon},11`;
+      
+      loadData();
+    }
+
+    // === Helpers ===
+    function degToCompass(deg) {
+      const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+      return dirs[Math.round(deg / 22.5) % 16];
+    }
+
+    function getArrowForDirection(deg) {
+      const arrows = ['↓','↙','←','↖','↑','↗','→','↘','↑','↖','←','↙','↓','↘','→','↗'];
+      return arrows[Math.round(deg / 22.5) % 16];
+    }
+
+    function isNowInActivityWindow() {
+      const h = new Date().getHours();
+      return h >= CONFIG.activityStart && h <= CONFIG.activityEnd;
+    }
+
+    function getStatus(wind, visibility, waveHeight, rainProb) {
+      const activity = ACTIVITIES[currentActivity];
+      const reasons = [];
+      let level = 'go';
+
+      // Validar viento máximo
+      if (wind > activity.windThreshold) {
+        level = 'no-go';
+        reasons.push(`Viento ${wind.toFixed(1)} km/h supera ${activity.windThreshold} km/h`);
+      }
+
+      // Validar visibilidad mínima
+      if (visibility < activity.visibilityThreshold) {
+        level = 'no-go';
+        reasons.push(`Visibilidad ${visibility.toFixed(1)} km por debajo de ${activity.visibilityThreshold} km`);
+      }
+
+      // Validar oleaje específico por actividad
+      if (level === 'go') {
+        if (activity.waveMax && waveHeight > activity.waveMax) {
+          level = 'caution';
+          reasons.push(`Oleaje ${waveHeight.toFixed(1)} m supera máximo ${activity.waveMax} m`);
+        } else if (activity.waveMin && waveHeight < activity.waveMin) {
+          level = 'caution';
+          reasons.push(`Oleaje ${waveHeight.toFixed(1)} m por debajo de mínimo ${activity.waveMin} m`);
+        }
+
+        // Validar viento mínimo (para actividades que lo necesitan)
+        if (activity.windMin && wind < activity.windMin && level === 'go') {
+          level = 'caution';
+          reasons.push(`Viento ${wind.toFixed(1)} km/h por debajo de ${activity.windMin} km/h requerido`);
+        }
+
+        // Lluvia
+        if (rainProb > 60 && level === 'go') { 
+          level = 'caution'; 
+          reasons.push(`Alta probabilidad de lluvia (${rainProb}%)`); 
+        }
+      }
+      return { level, reasons };
+    }
+
+    function getStatusInfo(level) {
+      if (level === 'go') return { title: 'Condiciones Aptas', detail: 'Buenas condiciones para paddle surf' };
+      if (level === 'caution') return { title: 'Precaución', detail: 'Condiciones marginales, evalúa antes de salir' };
+      return { title: 'No Recomendable', detail: 'Condiciones adversas para navegar' };
+    }
+
+    function getStatusIcon(level) {
+      if (level === 'go') return '✓';
+      if (level === 'caution') return '!';
+      return '✕';
+    }
+
+    function getCssVar(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    // === URL Builders ===
+    function buildForecastUrl(loc) {
+      return `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}` +
+        `&current=wind_speed_10m,wind_direction_10m,precipitation_probability,visibility` +
+        `&hourly=wind_speed_10m,wind_direction_10m,precipitation_probability,visibility` +
+        `&timezone=${CONFIG.timezone}`;
+    }
+
+    function buildMarineUrl(loc) {
+      return `https://marine-api.open-meteo.com/v1/marine?latitude=${loc.lat}&longitude=${loc.lon}` +
+        `&current=wave_height,wave_period` +
+        `&hourly=wave_height,wave_period` +
+        `&timezone=${CONFIG.timezone}`;
+    }
+
+    // === Data Fetching ===
+    async function fetchAllData() {
+      if (!currentLocation) return null;
+      try {
+        const [forecastRes, marineRes] = await Promise.all([
+          fetch(buildForecastUrl(currentLocation)).then(r => {
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json();
+          }),
+          fetch(buildMarineUrl(currentLocation)).then(r => {
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json();
+          }),
+        ]);
+        return { forecast: forecastRes, marine: marineRes };
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        throw err;
+      }
+    }
+
+    // === Rendering ===
+    function renderCurrent(data) {
+      const f = data.forecast;
+      const m = data.marine;
+
+      const wind = f.current?.wind_speed_10m ?? 0;
+      const windDir = f.current?.wind_direction_10m ?? 0;
+      const rainProb = f.current?.precipitation_probability ?? 0;
+      const visibility = (f.current?.visibility ?? 10000) / 1000;
+      const waveHeight = m.current?.wave_height ?? 0;
+      const wavePeriod = m.current?.wave_period ?? 0;
+
+      const status = getStatus(wind, visibility, waveHeight, rainProb);
+      const statusInfo = getStatusInfo(status.level);
+
+      const banner = document.getElementById('statusBanner');
+      banner.className = `status-banner status-${status.level}`;
+      document.getElementById('statusTitle').textContent = statusInfo.title;
+      document.getElementById('statusDetail').textContent =
+        status.reasons.length > 0 ? status.reasons.join(' · ') : statusInfo.detail;
+      document.getElementById('statusIcon').textContent = getStatusIcon(status.level);
+
+      document.getElementById('windSpeed').textContent = wind.toFixed(1);
+      document.getElementById('windDir').textContent = `Dir: ${degToCompass(windDir)}`;
+      document.getElementById('windDirArrow').textContent = getArrowForDirection(windDir);
+      document.getElementById('cardWind').classList.toggle('alert', wind > CONFIG.windThreshold);
+
+      document.getElementById('waveHeight').textContent = waveHeight.toFixed(1);
+      document.getElementById('wavePeriod').textContent = `Periodo: ${wavePeriod.toFixed(1)} s`;
+      document.getElementById('cardWave').classList.toggle('alert', waveHeight > 1.0);
+
+      document.getElementById('rainProb').textContent = rainProb;
+      document.getElementById('rainBarFill').style.width = `${rainProb}%`;
+      document.getElementById('cardRain').classList.toggle('alert', rainProb > 60);
+
+      const visDisplay = visibility >= 10 ? visibility.toFixed(0) : visibility.toFixed(1);
+      document.getElementById('visibility').textContent = visDisplay;
+      document.getElementById('visStatus').textContent =
+        visibility >= CONFIG.visibilityThreshold ? 'Adecuada' : 'Baja';
+      document.getElementById('cardVis').classList.toggle('alert', visibility < CONFIG.visibilityThreshold);
+
+      const inWindow = isNowInActivityWindow();
+      const ws = document.getElementById('windowStatus');
+      ws.textContent = inWindow ? 'En curso' : 'Fuera de franja';
+      ws.className = `window-status${inWindow ? ' active' : ''}`;
+    }
+
+    function renderChart(data) {
+      const f = data.forecast;
+      const m = data.marine;
+      const ctx = document.getElementById('forecastChart').getContext('2d');
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const textColor = isDark ? '#7a92a0' : '#5a7180';
+      const gridColor = isDark ? '#1f3040' : '#eef2f5';
+
+      const hours = f.hourly.time.slice(0, 48);
+      const labels = hours.map(t => {
+        const d = new Date(t);
+        return d.toLocaleString('es-ES', { hour: '2-digit', day: '2-digit', month: '2-digit' });
+      });
+
+      const windData = f.hourly.wind_speed_10m.slice(0, 48);
+      const visData = f.hourly.visibility.slice(0, 48).map(v => v / 1000);
+      const rainData = f.hourly.precipitation_probability.slice(0, 48);
+      const waveData = m.hourly.wave_height.slice(0, 48);
+
+      if (forecastChart) forecastChart.destroy();
+
+      forecastChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Viento (km/h)', data: windData, borderColor: getCssVar('--color-wind'), backgroundColor: 'transparent', yAxisID: 'y', tension: 0.3, pointRadius: 0, pointHoverRadius: 5, borderWidth: 2.5 },
+            { label: 'Oleaje (m)', data: waveData, borderColor: getCssVar('--color-wave'), backgroundColor: 'transparent', yAxisID: 'y1', tension: 0.3, pointRadius: 0, pointHoverRadius: 5, borderWidth: 2 },
+            { label: 'Precip. (%)', data: rainData, borderColor: getCssVar('--color-rain'), backgroundColor: 'transparent', yAxisID: 'y2', tension: 0.3, pointRadius: 0, pointHoverRadius: 5, borderWidth: 2 },
+            { label: 'Visib. (km)', data: visData, borderColor: getCssVar('--color-vis'), backgroundColor: 'transparent', yAxisID: 'y1', tension: 0.3, pointRadius: 0, pointHoverRadius: 5, borderWidth: 2 },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: isDark ? '#14222b' : '#ffffff',
+              titleColor: isDark ? '#d8e4ea' : '#1a2730',
+              bodyColor: isDark ? '#7a92a0' : '#5a7180',
+              borderColor: isDark ? '#2a3f50' : '#cdd8df',
+              borderWidth: 1, padding: 10, cornerRadius: 8,
+            },
+          },
+          scales: {
+            x: { ticks: { color: textColor, font: { size: 10 }, maxTicksLimit: 12 }, grid: { color: gridColor } },
+            y: { type: 'linear', position: 'left', title: { display: true, text: 'Viento km/h', color: textColor, font: { size: 10 } }, ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor }, suggestedMax: 25 },
+            y1: { type: 'linear', position: 'right', title: { display: true, text: 'Oleaje m / Visib. km', color: textColor, font: { size: 10 } }, ticks: { color: textColor, font: { size: 10 } }, grid: { drawOnChartArea: false }, suggestedMax: 15 },
+            y2: { type: 'linear', position: 'right', min: 0, max: 100, ticks: { display: false }, grid: { drawOnChartArea: false } },
+          },
+        },
+      });
+    }
+
+    function renderHourlyTable(data) {
+      const f = data.forecast;
+      const m = data.marine;
+      const tbody = document.getElementById('hourlyTableBody');
+      tbody.innerHTML = '';
+
+      const now = new Date();
+      let count = 0;
+      for (let i = 0; i < f.hourly.time.length; i++) {
+        const d = new Date(f.hourly.time[i]);
+        const h = d.getHours();
+        if (h >= CONFIG.activityStart && h <= CONFIG.activityEnd) {
+          if (d >= now || (d.getDate() === now.getDate() && d.getHours() === now.getHours())) {
+            const wind = f.hourly.wind_speed_10m[i];
+            const windDir = f.hourly.wind_direction_10m[i];
+            const vis = f.hourly.visibility[i] / 1000;
+            const rain = f.hourly.precipitation_probability[i];
+            const wave = m.hourly.wave_height[i];
+            const period = m.hourly.wave_period[i];
+
+            const status = getStatus(wind, vis, wave, rain);
+            const badgeClass = status.level === 'go' ? 'badge-go' : status.level === 'caution' ? 'badge-caution' : 'badge-no-go';
+            const badgeText = status.level === 'go' ? 'Apto' : status.level === 'caution' ? 'Precaución' : 'No apto';
+
+            const timeLabel = d.toLocaleString('es-ES', { weekday: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+            const row = document.createElement('tr');
+            if (d.getDate() === now.getDate() && h === now.getHours()) row.className = 'row-highlight';
+            row.innerHTML = `
+              <td>${timeLabel}</td>
+              <td>${wind.toFixed(1)}</td>
+              <td>${getArrowForDirection(windDir)} ${degToCompass(windDir)}</td>
+              <td>${wave.toFixed(1)} m</td>
+              <td>${period.toFixed(1)} s</td>
+              <td>${rain}%</td>
+              <td>${vis >= 10 ? vis.toFixed(0) : vis.toFixed(1)}</td>
+              <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+            `;
+            tbody.appendChild(row);
+            count++;
+          }
+        }
+      }
+
+      if (count === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:1.5rem;color:var(--color-text-muted)">No hay horas de actividad en las próximas 48h</td></tr>';
+      }
+    }
+
+    function updateLastUpdate() {
+      const time = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+      document.getElementById('lastUpdate').textContent = `Actualizado: ${time}`;
+    }
+
+    // === Main ===
+    async function loadData() {
+      try {
+        document.querySelector('.app').classList.add('loading');
+        currentData = await fetchAllData();
+        if (currentData) {
+          renderCurrent(currentData);
+          renderChart(currentData);
+          renderHourlyTable(currentData);
+          updateLastUpdate();
+        }
+        document.querySelector('.app').classList.remove('loading');
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        document.getElementById('statusTitle').textContent = 'Error de conexión';
+        document.getElementById('statusDetail').textContent = 'No se pudieron obtener los datos meteorológicos. Reintentando…';
+        document.querySelector('.app').classList.remove('loading');
+      }
+    }
+
+    // Init
+    document.addEventListener('DOMContentLoaded', () => {
+      initActivitySelect();
+      initProvinceSelect();
+    });
+  </script>
+</body>
+</html>
